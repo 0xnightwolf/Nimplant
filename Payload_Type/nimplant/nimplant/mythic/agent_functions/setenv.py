@@ -48,11 +48,22 @@ class SetEnvCommand(CommandBase):
     argument_class = SetEnvArguments
     attackmapping = []
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        task.display_params = "-Param {} -Value {}".format(
-            task.args.get_arg("param"),
-            task.args.get_arg("value"))
-        return task
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateResponseMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        return response
 
-    async def process_response(self, response: AgentResponse):
-        pass
+    async def process_response(sefl, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp
+
+    # async def create_tasking(self, task: MythicTask) -> MythicTask:
+    #     task.display_params = "-Param {} -Value {}".format(
+    #         task.args.get_arg("param"),
+    #         task.args.get_arg("value"))
+    #     return task
+
+    # async def process_response(self, response: AgentResponse):
+    #     pass

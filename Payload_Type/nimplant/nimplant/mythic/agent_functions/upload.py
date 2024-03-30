@@ -66,32 +66,28 @@ class UploadCommand(CommandBase):
     attackmapping = ["T1132", "T1030", "T1105"]
     argument_class = UploadArguments
 
-    async def create_tasking(self, task: MythicTask) -> MythicTask:
-        file_resp = await MythicRPC().execute(
-            "get_file",
-            file_id=task.args.get_arg("file"),
-            task_id=task.id,
-            get_contents=False)
-        if file_resp.status == MythicRPCStatus.Success:
-            original_file_name = file_resp.response[0]["filename"]
+    async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
+        response = PTTaskCreateTaskingMessageResponse(
+            TaskID=taskData.Task.ID,
+            Success=True,
+        )
+        file_resp = await SendMythicRPCFileSearch(MythicRPCFileSearchMessage(
+            TaskID=taskData.Task.ID,
+            AgentFileID=taskData.args.get_arg("file")
+        ))
+        if file_resp.Success:
+            original_file_name = file_resp.Files[0].Filename
         else:
-            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(task.args.get_arg("file")))
-        
-        task.args.add_arg("file_name", original_file_name)
-        
-        host = task.args.get_arg("host")
-        path = task.args.get_arg("remote_path")
-        disp_str = ""
-        
-        if path is not None and path != "":
-            if host is not None and host != "":
-                disp_str = "-File {} -Host {} -Path {}".format(original_file_name, host, path)
-            else:
-                disp_str = "-File {} -Path {}".format(original_file_name, path)
-        else:
-            disp_str = "-File {}".format(original_file_name)
-        task.display_params = disp_str
-        return task
+            raise Exception("Failed to fetch uploaded file from Mythic (ID: {})".format(taskData.args.get_arg("file")))
 
-    async def process_response(self, response: AgentResponse):
-        pass
+        path = taskData.args.get_arg("path")
+        response.DisplayParams = "Uploading {} to {}".format(original_file_name, path)
+        return response
+
+    async def process_response(self, task: PTTaskMessageAllData, response: any) -> PTTaskProcessResponseMessageResponse:
+        if "message" in response:
+            user_output = response["message"]
+            await MythicRPC().execute("create_output", task_id=task.Task.ID, output=message_converter.translateAthenaMessage(user_output))
+
+        resp = PTTaskProcessResponseMessageResponse(TaskID=task.Task.ID, Success=True)
+        return resp
