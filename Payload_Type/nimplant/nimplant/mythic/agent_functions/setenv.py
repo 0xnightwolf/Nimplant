@@ -1,5 +1,6 @@
 from mythic_container.MythicCommandBase import *
 import json
+from mythic_container.MythicRPC import *
 
 
 class SetEnvArguments(TaskArguments):
@@ -49,7 +50,7 @@ class SetEnvCommand(CommandBase):
     attackmapping = []
 
     async def create_go_tasking(self, taskData: PTTaskMessageAllData) -> PTTaskCreateTaskingMessageResponse:
-        response = PTTaskCreateResponseMessageResponse(
+        response = PTTaskCreateTaskingMessageResponse(
             TaskID=taskData.Task.ID,
             Success=True,
         )
